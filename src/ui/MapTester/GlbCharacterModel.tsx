@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { useThree } from '@react-three/fiber';
-import { useAnimations } from '@react-three/drei';
+import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader, KTX2Loader, SkeletonUtils } from 'three-stdlib';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
@@ -25,6 +24,13 @@ export function GlbCharacterModel({
   const characterUrl = `/characters/${characterId}.glb`;
   const animationUrl = `/animations/${animationName}.glb`;
 
+  // Create a dedicated mixer for this component instance
+  const mixer = useMemo(() => new THREE.AnimationMixer(null as any), []);
+
+  useFrame((_, delta) => {
+    mixer.update(delta);
+  });
+
   useEffect(() => {
     let active = true;
 
@@ -40,31 +46,38 @@ export function GlbCharacterModel({
       gltfLoader.setKTX2Loader(ktx2Loader);
     }
 
-    Promise.all([
-      new Promise<THREE.Group>((resolve, reject) => {
-        gltfLoader!.load(characterUrl, (gltf) => {
-          resolve(gltf.scene);
-        }, undefined, reject);
-      }),
-      new Promise<THREE.AnimationClip[]>((resolve, reject) => {
-        gltfLoader!.load(animationUrl, (gltf) => {
-          resolve(gltf.animations);
-        }, undefined, reject);
-      })
-    ]).then(([scene, anims]) => {
+    gltfLoader.load(characterUrl, (gltf) => {
       if (!active) return;
-      setCharScene(scene);
-      setAnimations(anims);
+      setCharScene(gltf.scene);
       setError(null);
-    }).catch(err => {
-      console.error("Error loading GLTF:", err);
-      if (active) setError(err);
+    }, undefined, (err) => {
+      console.error("Error loading character GLTF:", err);
+      if (active) setError(err as Error);
     });
 
     return () => {
       active = false;
     };
-  }, [characterUrl, animationUrl, gl]);
+  }, [characterUrl, gl]);
+
+  useEffect(() => {
+    let active = true;
+    
+    if (!gltfLoader) return; // Should be initialized by the other hook
+
+    gltfLoader.load(animationUrl, (gltf) => {
+      if (!active) return;
+      setAnimations(gltf.animations);
+      setError(null);
+    }, undefined, (err) => {
+      console.error("Error loading animation GLTF:", err);
+      if (active) setError(err as Error);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [animationUrl]);
 
   const clonedScene = useMemo(() => {
     if (!charScene) return null;
@@ -91,20 +104,19 @@ export function GlbCharacterModel({
     return cloned;
   }, [charScene]);
   
-  const { actions, names } = useAnimations(animations, group);
-  
   useEffect(() => {
-    if (names.length > 0) {
-      const actionName = names[0];
-      const action = actions[actionName];
-      if (action) {
-        action.reset().fadeIn(0.2).play();
-        return () => {
-          action.fadeOut(0.2);
-        };
-      }
+    if (animations.length > 0 && clonedScene) {
+      const clip = animations[0];
+      const action = mixer.clipAction(clip, clonedScene);
+      
+      // We must tell the mixer to stop any lingering weights on this action if we reuse it
+      action.reset().fadeIn(0.2).play();
+      
+      return () => {
+        action.fadeOut(0.2);
+      };
     }
-  }, [animationName, actions, names]);
+  }, [animations, clonedScene, mixer]);
 
   if (error) {
     throw error; // Let ErrorBoundary catch it

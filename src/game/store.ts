@@ -2,26 +2,30 @@ import { create } from 'zustand';
 import { checkCollision, checkPortal } from './physics';
 import { MapConfig } from '../types/map';
 
+export type PlayerState = 'idle' | 'moving' | 'attacking' | 'hit' | 'dead' | 'revived' | 'consuming';
+
 interface GameState {
   player: {
     x: number;
     y: number;
     isMoving: boolean;
     direction: number; // Angle in radians
+    state: PlayerState;
+    inBattle: boolean;
   };
   mapData: MapConfig | null;
   mapImageSize: { width: number, height: number };
   activePortal: any | null;
   spawnedPortalId: number | null;
   devCharacterClass: string;
-  devAnimation: string;
   setMapData: (data: MapConfig, width: number, height: number, targetPortalId?: number) => void;
   movePlayer: (dx: number, dy: number) => void;
   setPlayerPosition: (x: number, y: number) => void;
+  setPlayerState: (state: PlayerState) => void;
+  setPlayerInBattle: (inBattle: boolean) => void;
   setActivePortal: (portalData: any | null) => void;
   ignoreCurrentPortal: () => void;
   setDevCharacterClass: (charClass: string) => void;
-  setDevAnimation: (anim: string) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -30,20 +34,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     y: 0,
     isMoving: false,
     direction: 0,
+    state: 'idle',
+    inBattle: false,
   },
   mapData: null,
   mapImageSize: { width: 0, height: 0 },
   activePortal: null,
   spawnedPortalId: null,
   devCharacterClass: 'M2lutador',
-  devAnimation: 'idle_normal',
   setActivePortal: (portalData) => set({ activePortal: portalData }),
   ignoreCurrentPortal: () => set(state => ({
     spawnedPortalId: state.activePortal?.portalId ?? null,
     activePortal: null
   })),
   setDevCharacterClass: (devCharacterClass) => set({ devCharacterClass }),
-  setDevAnimation: (devAnimation) => set({ devAnimation }),
+  setPlayerState: (state) => set(s => ({ player: { ...s.player, state } })),
+  setPlayerInBattle: (inBattle) => set(s => ({ player: { ...s.player, inBattle } })),
   setMapData: (data, width, height, targetPortalId) => {
     // Find spawn point
     let spawnX = 0;
@@ -68,23 +74,28 @@ export const useGameStore = create<GameState>((set, get) => ({
       spawnY = spawnPortal.points.reduce((acc, p) => acc + p.y, 0) / spawnPortal.points.length;
     }
 
-    set({ 
+    set(s => ({ 
       mapData: data, 
       mapImageSize: { width, height },
-      player: { x: spawnX, y: spawnY, isMoving: false, direction: 0 },
+      player: { ...s.player, x: spawnX, y: spawnY, isMoving: false, direction: 0 },
       activePortal: null,
       spawnedPortalId: targetPortalId !== undefined ? targetPortalId : null
-    });
+    }));
   },
   movePlayer: (dx, dy) => {
     const { player, mapData } = get();
     if (!mapData) return;
 
+    let isMoving = dx !== 0 || dy !== 0;
+
+    // Early return if already stopped to prevent unnecessary state updates
+    if (!isMoving && !player.isMoving && player.state !== 'moving') {
+      return;
+    }
+
     const speed = 8;
     const newX = player.x + dx * speed;
     const newY = player.y + dy * speed;
-    
-    let isMoving = dx !== 0 || dy !== 0;
 
     // Portal check
     const portalData = checkPortal(newX, newY, mapData.polygons);
@@ -104,6 +115,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
 
+    // Determine state based on movement
+    const newState = isMoving ? 'moving' : (player.state === 'moving' ? 'idle' : player.state);
+
     // Check collision
     if (!checkCollision(newX, newY, mapData.polygons)) {
       set({ 
@@ -111,22 +125,23 @@ export const useGameStore = create<GameState>((set, get) => ({
           ...player, 
           x: newX, 
           y: newY, 
-          isMoving: dx !== 0 || dy !== 0,
-          direction: Math.atan2(dy, dx)
+          isMoving,
+          direction: isMoving ? Math.atan2(dy, dx) : player.direction,
+          state: newState
         } 
       });
     } else {
       // Try sliding along walls
       if (!checkCollision(newX, player.y, mapData.polygons)) {
         set({ 
-          player: { ...player, x: newX, isMoving: true, direction: dx > 0 ? 0 : Math.PI } 
+          player: { ...player, x: newX, isMoving: true, direction: dx > 0 ? 0 : Math.PI, state: 'moving' } 
         });
       } else if (!checkCollision(player.x, newY, mapData.polygons)) {
         set({ 
-          player: { ...player, y: newY, isMoving: true, direction: dy > 0 ? Math.PI/2 : -Math.PI/2 } 
+          player: { ...player, y: newY, isMoving: true, direction: dy > 0 ? Math.PI/2 : -Math.PI/2, state: 'moving' } 
         });
       } else {
-        set({ player: { ...player, isMoving: false } });
+        set({ player: { ...player, isMoving: false, state: player.state === 'moving' ? 'idle' : player.state } });
       }
     }
   },

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Settings, X } from 'lucide-react';
 import GameScene from './GameScene';
 import VirtualJoystick from './VirtualJoystick';
-import { useGameStore } from '../../game/store';
+import { useGameStore, PlayerState } from '../../game/store';
 
 const CHARACTERS = [
   { id: 'M2lutador', name: 'Lutador Artista' },
@@ -13,20 +13,18 @@ const CHARACTERS = [
   { id: 'M2soldado', name: 'Soldado Engenheiro' }
 ];
 
-const ANIMATIONS = [
-  'idle_normal',
-  'idle_battle',
-  'sprint',
-  'sword_attack',
-  'spell',
-  'consume',
-  'revive',
-  'hit_chest',
-  'death'
+const STATES: PlayerState[] = [
+  'idle',
+  'moving',
+  'attacking',
+  'hit',
+  'dead',
+  'revived',
+  'consuming'
 ];
 
 export default function MapTester() {
-  const { setMapData, movePlayer, player, activePortal, mapData, devCharacterClass, devAnimation, setDevCharacterClass, setDevAnimation } = useGameStore();
+  const { setMapData, movePlayer, player, activePortal, mapData, devCharacterClass, setDevCharacterClass, setPlayerState, setPlayerInBattle } = useGameStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentMapName, setCurrentMapName] = useState('izumo');
@@ -62,9 +60,7 @@ export default function MapTester() {
   useEffect(() => {
     let animationFrame: number;
     const loop = () => {
-      if (moveState.current.active) {
-        movePlayer(moveState.current.dx, moveState.current.dy);
-      }
+      movePlayer(moveState.current.dx, moveState.current.dy);
       animationFrame = requestAnimationFrame(loop);
     };
     animationFrame = requestAnimationFrame(loop);
@@ -184,19 +180,30 @@ export default function MapTester() {
           </div>
 
           <div className="mb-6">
-            <h3 className="text-sm text-gray-400 font-semibold uppercase tracking-wider mb-3">Animation Test</h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm text-gray-400 font-semibold uppercase tracking-wider">State Test</h3>
+              <label className="flex items-center gap-2 text-xs bg-white/10 px-2 py-1 rounded cursor-pointer hover:bg-white/20 transition">
+                <input 
+                  type="checkbox" 
+                  checked={player.inBattle} 
+                  onChange={(e) => setPlayerInBattle(e.target.checked)}
+                  className="accent-red-500"
+                />
+                In Battle
+              </label>
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              {ANIMATIONS.map(anim => (
+              {STATES.map(state => (
                 <button
-                  key={anim}
-                  onClick={() => setDevAnimation(anim)}
-                  className={`px-3 py-2 text-xs rounded-md transition text-center ${
-                    devAnimation === anim 
+                  key={state}
+                  onClick={() => setPlayerState(state)}
+                  className={`px-3 py-2 text-xs rounded-md transition text-center capitalize ${
+                    player.state === state 
                       ? 'bg-green-600 text-white' 
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
                   }`}
                 >
-                  {anim}
+                  {state}
                 </button>
               ))}
             </div>

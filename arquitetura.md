@@ -23,7 +23,7 @@ The project is a full-stack JavaScript/TypeScript application. It utilizes a **N
 │   │   ├── rendering/   # GPU-accelerated rendering pipelines (WebGL/Three.js).
 │   │   ├── assets/      # Loaders for PNG maps, JSON data, and GLB models.
 │   │   ├── physics.ts   # Client-side 2D polygon collision & overlay detection.
-│   │   └── store.ts     # Zustand store for client game state & physics sync.
+│   │   └── store.ts     # Zustand store for client game state, physics sync, and Animation State Machine (PlayerState).
 │   ├── ui/              # Responsive React components (HUD, Menus, Windows).
 │   │   ├── MapEditor/   # Visual map mapping tool for developers.
 │   │   └── MapTester/   # 2.5D WebGL Map Test Environment (Three.js/Fiber).
