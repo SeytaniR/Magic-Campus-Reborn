@@ -1,4 +1,4 @@
-import React, { useState, useEffect, MouseEvent } from 'react';
+import React, { useState, useEffect, MouseEvent, useRef } from 'react';
 import { Point, MapPolygon, PolygonType, MapConfig, MapCategory, MapBiome } from '../../types/map';
 import { Copy, Trash2, X, Check, ZoomIn, ZoomOut, Menu, Settings } from 'lucide-react';
 
@@ -24,6 +24,10 @@ export default function MapEditor() {
   const [zoom, setZoom] = useState(1);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   const [selectedPolyId, setSelectedPolyId] = useState<string | null>(null);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [panStart, setPanStart] = useState<{x: number, y: number, panX: number, panY: number} | null>(null);
 
   // Mobile responsiveness states
   const [isLeftMenuOpen, setIsLeftMenuOpen] = useState(false);
@@ -43,6 +47,38 @@ export default function MapEditor() {
     handleResize(); // Initial check
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Handle Zoom via mouse wheel
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoom(prev => {
+        const delta = e.deltaY < 0 ? 0.1 : -0.1;
+        const newZoom = Math.max(0.1, Math.min(3, Math.round((prev + delta) * 10) / 10));
+        
+        if (newZoom !== prev) {
+          // Adjust pan to zoom towards mouse cursor
+          setPan(currentPan => {
+            const rect = el.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            return {
+              x: mouseX - (mouseX - currentPan.x) * (newZoom / prev),
+              y: mouseY - (mouseY - currentPan.y) * (newZoom / prev)
+            };
+          });
+        }
+        return newZoom;
+      });
+    };
+    
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
   }, []);
 
   // Open right menu automatically when a polygon is selected on mobile
@@ -159,7 +195,7 @@ export default function MapEditor() {
   const toSvgPoints = (pts: Point[]) => pts.map(p => `${p.x},${p.y}`).join(' ');
 
   return (
-    <div className="flex w-full h-full text-sm font-sans relative overflow-hidden">
+    <div className="flex w-full h-[100dvh] text-sm font-sans relative overflow-hidden bg-gray-950">
       
       {/* Mobile Menu Toggles */}
       <div className="md:hidden absolute top-2 left-2 z-30 flex flex-col gap-2">
@@ -389,13 +425,41 @@ export default function MapEditor() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-4 cursor-crosshair min-h-0 relative">
+        <div 
+          ref={containerRef}
+          className={`flex-1 overflow-hidden p-0 min-h-0 relative ${panStart ? 'cursor-grabbing' : 'cursor-crosshair'}`}
+          onMouseDown={(e) => {
+            if (e.button === 2) {
+              setPanStart({
+                x: e.clientX,
+                y: e.clientY,
+                panX: pan.x,
+                panY: pan.y
+              });
+              e.preventDefault();
+            }
+          }}
+          onMouseMove={(e) => {
+            if (panStart) {
+              setPan({
+                x: panStart.panX + (e.clientX - panStart.x),
+                y: panStart.panY + (e.clientY - panStart.y)
+              });
+            }
+          }}
+          onMouseUp={(e) => {
+            if (e.button === 2) setPanStart(null);
+          }}
+          onMouseLeave={() => setPanStart(null)}
+          onContextMenu={e => e.preventDefault()}
+        >
           {imageSize.width > 0 && (
             <div 
-              className="relative shadow-2xl bg-gray-900"
+              className="relative shadow-2xl bg-gray-900 origin-top-left"
               style={{ 
-                width: imageSize.width * zoom, 
-                height: imageSize.height * zoom,
+                width: imageSize.width, 
+                height: imageSize.height,
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
               }}
             >
               <img 

@@ -53,7 +53,7 @@ export default function GenericCharacter() {
   return (
     <group ref={group}>
       <ErrorBoundary>
-        <group ref={gltfGroupRef} position={[0, 0, 200]} rotation={[0, 0, 0]} scale={200}>
+        <group ref={gltfGroupRef} position={[0, 0, 200]} rotation={[0, 0, 0]} scale={150}>
           <GlbCharacterModel 
             key={`${devCharacterClass}-${devAnimation}`}
             characterId={devCharacterClass} 

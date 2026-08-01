@@ -41,12 +41,12 @@ export default function GameScene({ imageUrl }: { imageUrl: string }) {
       <OrthographicCamera 
         makeDefault 
         position={[0, 0, 500]} 
-        zoom={0.5}
+        zoom={0.7}
         near={-1000} 
         far={1000} 
       />
       
-      <ambientLight intensity={0.6} />
+      <ambientLight intensity={0.9} />
       <directionalLight 
         position={[100, 100, 200]} 
         intensity={1.5} 

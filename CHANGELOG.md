@@ -9,3 +9,8 @@
 - **Transparency on Overlays:** Cloned materials deeply in `GlbCharacterModel.tsx` and enabled `transparent = true` to allow dynamic opacity interpolation when the player walks behind buildings.
 - **Movement Direction Rotation:** Applied a `Math.PI / 2` offset to `rotation.y` in `GenericCharacter.tsx` so the character correctly faces the joystick/keyboard input direction.
 - **Map Editor Loader:** Fixed a bug in `MapEditor.tsx` where loading a map JSON would crash due to a Vite SPA HTML fallback if the name was incorrect. The editor now gracefully validates the Content-Type and correctly updates the background image alongside the JSON.
+
+### Added / Changed
+- **Map Editor Zoom/Pan:** Implemented absolute CSS transform-based panning via right-click and dynamic scroll-wheel zoom centering in `MapEditor.tsx`, bypassing native scroll limits for full 2D camera freedom. Fixed layout overflow preventing bottom UI elements from rendering properly.
+- **Gameplay Camera & Lighting:** Decreased character scale to 150, increased camera zoom to 0.7, and boosted ambient light intensity to 0.9 for better visibility and framing during gameplay.
+- **Map Assets:** Updated map JSON and image assets in `public/mapas/`.
