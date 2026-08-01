@@ -19,7 +19,10 @@ The project is a full-stack JavaScript/TypeScript application. It utilizes a **N
 │   ├── types/           # Global TypeScript type definitions.
 │   │   └── map.ts       # Map configuration and polygon types.
 │   ├── game/            # Client-side Game engine (ECS, Rendering).
-│   │   ├── ecs/         # Client Entity Component System implementation.
+│   │   ├── ecs/         # Entity Component System implementation (Pure TypeScript, Server-Ready).
+│   │   │   ├── core/      # Base Entity class.
+│   │   │   ├── components/# Data components (Stats, ATB, GridPosition, StatusEffects).
+│   │   │   └── systems/   # Logic systems (ATBSystem, CombatSystem, SkillSystem, AISystem, ActionQueueSystem).
 │   │   ├── rendering/   # GPU-accelerated rendering pipelines (WebGL/Three.js).
 │   │   ├── assets/      # Loaders for PNG maps, JSON data, and GLB models.
 │   │   ├── physics.ts   # Client-side 2D polygon collision & overlay detection.

@@ -4,7 +4,7 @@ These rules MUST be strictly followed by any AI Developer working on this projec
 
 ## Core Architecture
 - **Full-Stack Split**: The project uses Node.js for the authoritative server and React for the client interface.
-- **Modularity**: The entire project must use ES6 Modules and an Entity Component System (ECS) architecture.
+- **Modularity**: The entire project must use ES6 Modules and an Entity Component System (ECS) architecture. All ECS logic MUST be pure TypeScript, completely decoupled from React or WebGL, ensuring direct portability to the Node.js backend.
 - **Server Authority**: The server is STRICTLY authoritative to prevent cheating. The client side is purely visual and sends input to the server.
 - **Database**: MongoDB will be used for production. For initial validation, simulated persistence (e.g., in-memory server state or mock local storage logic) can be used, but the architecture must be designed to plug into MongoDB.
 
