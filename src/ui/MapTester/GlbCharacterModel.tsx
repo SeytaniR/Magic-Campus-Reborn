@@ -27,7 +27,7 @@ export function GlbCharacterModel({
   const [internalAnimations, setInternalAnimations] = useState<THREE.AnimationClip[]>([]);
   const [externalAnimations, setExternalAnimations] = useState<THREE.AnimationClip[]>([]);
 
-  const characterUrl = characterId.includes('/') ? `/${characterId}.glb` : `/characters/${characterId}.glb`;
+  const characterUrl = characterId.includes('/') ? `${import.meta.env.BASE_URL}${characterId}.glb` : `${import.meta.env.BASE_URL}characters/${characterId}.glb`;
   
   useEffect(() => {
     if (entityId) {
@@ -43,7 +43,7 @@ export function GlbCharacterModel({
     }
   }, [entityId, animationName]);
 
-  const animationUrl = `/animations/${currentAnim}.glb`;
+  const animationUrl = `${import.meta.env.BASE_URL}animations/${currentAnim}.glb`;
 
   const globalMaterialCache: Record<string, THREE.Material | THREE.Material[]> = {};
 
@@ -116,7 +116,7 @@ export function GlbCharacterModel({
 
     if (!ktx2Loader) {
       ktx2Loader = new KTX2Loader();
-      ktx2Loader.setTranscoderPath('/basis/');
+      ktx2Loader.setTranscoderPath(`${import.meta.env.BASE_URL}basis/`);
       ktx2Loader.detectSupport(gl);
     }
     

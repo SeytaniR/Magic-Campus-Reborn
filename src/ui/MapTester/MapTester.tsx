@@ -50,12 +50,12 @@ export default function MapTester() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/mapas/${mapName}.json`);
+      const response = await fetch(`${import.meta.env.BASE_URL}mapas/${mapName}.json`);
       if (!response.ok) throw new Error(`Failed to load ${mapName}.json`);
       const data = await response.json();
       
       const img = new Image();
-      img.src = `/mapas/${mapName}.jpg`;
+      img.src = `${import.meta.env.BASE_URL}mapas/${mapName}.jpg`;
       img.onload = () => {
         setMapData(data, img.width, img.height, targetPortalId);
         setCurrentMapName(mapName);
@@ -162,9 +162,9 @@ export default function MapTester() {
       <div className="absolute inset-0 z-10 pointer-events-none">
         <Canvas dpr={[1, 1.5]} gl={{ antialias: false, powerPreference: 'high-performance' }}>
           {player.inBattle ? (
-            <BattleScene mapImageUrl={`/mapas/${currentMapName}.jpg`} />
+            <BattleScene mapImageUrl={`${import.meta.env.BASE_URL}mapas/${currentMapName}.jpg`} />
           ) : (
-            <GameScene imageUrl={`/mapas/${currentMapName}.jpg`} />
+            <GameScene imageUrl={`${import.meta.env.BASE_URL}mapas/${currentMapName}.jpg`} />
           )}
         </Canvas>
       </div>
