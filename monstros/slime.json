@@ -1,0 +1,19 @@
+{
+  "id": "slime",
+  "namePattern": "Slime {elemento}",
+  "tier": "C",
+  "biomes": [
+    "pântano"
+  ],
+  "combatStyle": "MELEE_PHYSICAL",
+  "baseStatsSpread": {
+    "vitality": 40,
+    "strength": 20,
+    "intelligence": 3,
+    "spirit": 12,
+    "agility": 20,
+    "mentality": 0
+  },
+  "assetPath": "/monstros/slime.glb",
+  "description": "Um monstro orgânico de origem mágica. Seu corpo é molenga e cheira mau, mas é muito resistente."
+}

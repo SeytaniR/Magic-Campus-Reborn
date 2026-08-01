@@ -1,0 +1,22 @@
+{
+  "id": "cogumelo",
+  "namePattern": "Cogumelo {elemento}",
+  "tier": "C",
+  "biomes": [
+    "pântano",
+    "bosque",
+    "subúrbio",
+    "montanha"
+  ],
+  "combatStyle": "MELEE_PHYSICAL",
+  "baseStatsSpread": {
+    "vitality": 30,
+    "strength": 35,
+    "intelligence": 5,
+    "spirit": 10,
+    "agility": 15,
+    "mentality": 5
+  },
+  "assetPath": "/monstros/cogumelo.glb",
+  "description": "Um monstro orgânico de origem fúngica. Suas raízes são densas, garantindo boa vitalidade e golpes físicos razoáveis, mas é extremamente lento e carece de inteligência."
+}
