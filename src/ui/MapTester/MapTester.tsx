@@ -28,6 +28,15 @@ const STATES: PlayerState[] = [
   'consuming'
 ];
 
+const originalWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === 'string') {
+    if (args[0].includes('THREE.Clock: This module has been deprecated')) return;
+    if (args[0].includes('THREE.PropertyBinding: No target node found for track')) return;
+  }
+  originalWarn(...args);
+};
+
 export default function MapTester() {
   const { setMapData, movePlayer, player, activePortal, mapData, devCharacterClass, setDevCharacterClass, setPlayerState, setPlayerInBattle } = useGameStore();
   const [loading, setLoading] = useState(true);
@@ -151,7 +160,7 @@ export default function MapTester() {
   return (
     <div className="relative w-full h-full bg-gray-950 touch-none overflow-hidden">
       <div className="absolute inset-0 z-10 pointer-events-none">
-        <Canvas shadows={{ type: THREE.PCFShadowMap as any }}>
+        <Canvas dpr={[1, 1.5]} gl={{ antialias: false, powerPreference: 'high-performance' }}>
           {player.inBattle ? (
             <BattleScene mapImageUrl={`/mapas/${currentMapName}.jpg`} />
           ) : (

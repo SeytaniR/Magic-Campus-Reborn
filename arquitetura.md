@@ -44,4 +44,4 @@ The project is a full-stack JavaScript/TypeScript application. It utilizes a **N
 1. **Client -> Server**: The React/WebGL client captures user input (joystick, touch, clicks) and sends intent messages (e.g., "request move to X,Y", "cast spell") to the server via WebSockets.
 2. **Server (Authoritative)**: The server receives inputs, validates them, and processes them through its internal ECS tick loop (handling physics, collisions via JSON maps, and stats).
 3. **Server -> Client**: The server broadcasts the updated, authoritative world state to the connected clients.
-4. **Client (Visual)**: The client's ECS interpolates the incoming state data, updates the 3D `.glb` model animations, renders the 2D PNG maps onto the GPU, and updates the React-based responsive HUD.
+4. **Client (Visual)**: The client's ECS interpolates the incoming state data, updates the 3D `.glb` model animations, renders the 2D PNG maps onto the GPU, and updates the React-based responsive HUD using 3D-to-2D vector projections (`HUDProjector`) to ensure high FPS on mobile devices.

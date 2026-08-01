@@ -14,6 +14,7 @@ export class BattleManager {
   public active: boolean = false;
   public waitingForPlayerInput: Entity | null = null;
   public combatLog: string[] = [];
+  public entityAnimations: Record<string, string> = {};
 
   private atbSystem = new ATBSystem();
   private queueSystem = new ActionQueueSystem();
@@ -21,11 +22,15 @@ export class BattleManager {
   private skillSystem = new SkillSystem();
   private aiSystem = new AISystem();
 
-  private onStateChangeCallback: (() => void) | null = null;
+  private stateChangeCallbacks = new Set<() => void>();
   private onBattleEndCallback: ((victory: boolean) => void) | null = null;
 
-  public setOnStateChange(cb: () => void) {
-    this.onStateChangeCallback = cb;
+  public addOnStateChange(cb: () => void) {
+    this.stateChangeCallbacks.add(cb);
+  }
+
+  public removeOnStateChange(cb: () => void) {
+    this.stateChangeCallbacks.delete(cb);
   }
 
   public setOnBattleEnd(cb: (victory: boolean) => void) {
@@ -33,7 +38,7 @@ export class BattleManager {
   }
 
   private notify() {
-    if (this.onStateChangeCallback) this.onStateChangeCallback();
+    this.stateChangeCallbacks.forEach(cb => cb());
   }
 
   private log(msg: string) {

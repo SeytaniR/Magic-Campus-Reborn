@@ -41,18 +41,15 @@ export default function GameScene({ imageUrl }: { imageUrl: string }) {
       <OrthographicCamera 
         makeDefault 
         position={[0, 0, 500]} 
-        zoom={0.7}
+        zoom={0.5}
         near={-1000} 
         far={1000} 
       />
       
-      <ambientLight intensity={0.9} />
+      <ambientLight intensity={2.5} />
       <directionalLight 
         position={[100, 100, 200]} 
-        intensity={1.5} 
-        castShadow 
-        shadow-mapSize-width={1024} 
-        shadow-mapSize-height={1024} 
+        intensity={3.0} 
       />
 
       <MapPlane imageUrl={imageUrl} />

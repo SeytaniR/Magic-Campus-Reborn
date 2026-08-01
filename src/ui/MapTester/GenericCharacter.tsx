@@ -90,19 +90,7 @@ export default function GenericCharacter() {
         <meshBasicMaterial color="black" transparent opacity={0.3} />
       </mesh>
       
-      {/* MONSTRO TEST: Cogumelos Elementais */}
-      <group position={[100, -100, 200]} rotation={[0, 0, 0]} scale={150}>
-         <GlbCharacterModel characterId="monstros/cogumelo" animationName="idle_battle" colorOverride="#4caf50" />
-      </group>
-      <group position={[-100, -100, 200]} rotation={[0, 0, 0]} scale={150}>
-         <GlbCharacterModel characterId="monstros/cogumelo" animationName="idle_battle" colorOverride="#ff4444" />
-      </group>
-      <group position={[100, 100, 200]} rotation={[0, 0, 0]} scale={150}>
-         <GlbCharacterModel characterId="monstros/cogumelo" animationName="idle_battle" colorOverride="#4444ff" />
-      </group>
-      <group position={[-100, 100, 200]} rotation={[0, 0, 0]} scale={150}>
-         <GlbCharacterModel characterId="monstros/cogumelo" animationName="idle_battle" colorOverride="#aaaaaa" />
-      </group>
+
     </group>
   );
 }

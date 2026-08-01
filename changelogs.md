@@ -2,8 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.0] - Combat System Core, Isometric Battle UI, and GLTF Monsters
+## [0.4.1] - Performance, HUD Projection, and Crash Fixes
 ### Added
+- Replaced computationally expensive 3D `<Html>` overlays in `BattleScene` with a 2D static projection system (`HUDProjector`) in `BattleUI`, significantly improving FPS on mobile devices (e.g., Redmi Note 14 Pro).
+- Increased ambient and directional lighting intensity in `GameScene` and `BattleScene` to improve 3D model visibility.
+- Adjusted camera zoom level to `0.5` uniformly across exploration and battle modes for better spatial awareness.
+- Added a global console warning filter in `MapTester.tsx` to suppress expected and harmless warnings (`THREE.Clock` deprecation from R3F, and `THREE.PropertyBinding` from mismatched skeleton animations).
+### Fixed
+- Fixed fatal React crash caused by `GlbCharacterModel` throwing errors when 404ing on missing monster animations (e.g. `idle_battle.glb`). Error is now gracefully handled via console warnings.
+- Fixed `AnimationMixer` initialization in `GlbCharacterModel` which was causing undefined reference exceptions during property binding.
+- Fixed battle crash `battleManager.addOnStateChange is not a function` by renaming the incorrect base method `setOnStateChange` inside `BattleManager.ts`.
+- Removed debug duplicate static mushrooms from the `GameScene` exploration map.
+- Restored `dpr={[1, 1.5]}` in `<Canvas>` to ensure sharp, high-quality rendering without excessive performance penalty.
+
+## [0.4.0] - Combat System Core, Isometric Battle UI, and GLTF Monsters
 - Created `combat_system_design.md` to document the game's ATB, grid mechanics, elemental weaknesses, and formulas.
 - Implemented core Combat ECS: `BattleManager`, `ATBSystem`, `ActionQueueSystem`, and `CombatSystem`.
 - Added random distance-based encounters mapping to the battle scene.

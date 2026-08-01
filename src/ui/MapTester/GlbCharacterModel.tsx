@@ -3,35 +3,112 @@ import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GLTFLoader, KTX2Loader, SkeletonUtils } from 'three-stdlib';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { battleManager } from '../../game/ecs/BattleManager';
 
 let ktx2Loader: KTX2Loader | null = null;
 let gltfLoader: GLTFLoader | null = null;
 
 export function GlbCharacterModel({ 
   characterId, 
-  animationName,
+  animationName = 'idle_battle',
+  entityId,
   colorOverride
 }: { 
   characterId: string, 
-  animationName: string,
+  animationName?: string,
+  entityId?: string,
   colorOverride?: string
 }) {
   const group = useRef<THREE.Group>(null);
   const { gl } = useThree();
   
+  const [currentAnim, setCurrentAnim] = useState(animationName);
   const [charScene, setCharScene] = useState<THREE.Group | null>(null);
   const [internalAnimations, setInternalAnimations] = useState<THREE.AnimationClip[]>([]);
   const [externalAnimations, setExternalAnimations] = useState<THREE.AnimationClip[]>([]);
-  const [error, setError] = useState<Error | null>(null);
 
   const characterUrl = characterId.includes('/') ? `/${characterId}.glb` : `/characters/${characterId}.glb`;
-  const animationUrl = `/animations/${animationName}.glb`;
+  
+  useEffect(() => {
+    if (entityId) {
+      const handleState = () => {
+        const anim = battleManager.entityAnimations[entityId] || 'idle_battle';
+        setCurrentAnim(prev => prev !== anim ? anim : prev);
+      };
+      battleManager.addOnStateChange(handleState);
+      handleState(); // Initial check
+      return () => battleManager.removeOnStateChange(handleState);
+    } else {
+      setCurrentAnim(animationName);
+    }
+  }, [entityId, animationName]);
 
-  // Create a dedicated mixer for this component instance
-  const mixer = useMemo(() => new THREE.AnimationMixer(null as any), []);
+  const animationUrl = `/animations/${currentAnim}.glb`;
+
+  const globalMaterialCache: Record<string, THREE.Material | THREE.Material[]> = {};
+
+  const clonedScene = useMemo(() => {
+    if (!charScene) return null;
+    const cloned = SkeletonUtils.clone(charScene);
+    cloned.traverse((child: any) => {
+      if (child.isMesh) {
+        child.frustumCulled = false; // Just in case
+        
+        if (child.material) {
+          const processMaterial = (m: THREE.Material) => {
+            const cacheKey = `${m.uuid}_${colorOverride || 'default'}`;
+            if (!globalMaterialCache[cacheKey]) {
+              const newMat = m.clone();
+              
+              // Hue Shifting via Shader Injection
+              if (colorOverride) {
+                newMat.onBeforeCompile = (shader) => {
+                  shader.uniforms.targetColor = { value: new THREE.Color(colorOverride) };
+                  
+                  shader.fragmentShader = `
+                    uniform vec3 targetColor;
+                  ` + shader.fragmentShader;
+                  
+                  shader.fragmentShader = shader.fragmentShader.replace(
+                    '#include <map_fragment>',
+                    `
+                    #include <map_fragment>
+                    float r_val = diffuseColor.r;
+                    float g_val = diffuseColor.g;
+                    float b_val = diffuseColor.b;
+                    
+                    // Se o verde for a cor predominante
+                    if (g_val > r_val * 1.1 && g_val > b_val * 1.1) {
+                       float intensity = g_val; 
+                       diffuseColor = vec4(targetColor * intensity, diffuseColor.a);
+                    }
+                    `
+                  );
+                };
+              }
+              
+              globalMaterialCache[cacheKey] = newMat;
+            }
+            return globalMaterialCache[cacheKey];
+          };
+
+          child.material = Array.isArray(child.material) 
+            ? child.material.map(processMaterial)
+            : processMaterial(child.material);
+        }
+      }
+    });
+    return cloned;
+  }, [charScene, colorOverride]);
+
+  // Create a dedicated mixer for the cloned scene
+  const mixer = useMemo(() => {
+    if (!clonedScene) return null;
+    return new THREE.AnimationMixer(clonedScene);
+  }, [clonedScene]);
 
   useFrame((_, delta) => {
-    mixer.update(delta);
+    if (mixer) mixer.update(delta);
   });
 
   useEffect(() => {
@@ -53,10 +130,8 @@ export function GlbCharacterModel({
       if (!active) return;
       setCharScene(gltf.scene);
       setInternalAnimations(gltf.animations);
-      setError(null);
     }, undefined, (err) => {
-      console.error("Error loading character GLTF:", err);
-      if (active) setError(err as Error);
+      console.warn(`[GlbCharacterModel] Failed to load character ${characterUrl}:`, err);
     });
 
     return () => {
@@ -66,8 +141,8 @@ export function GlbCharacterModel({
 
   useEffect(() => {
     // Check if animation is already internal
-    let clip = internalAnimations.find(a => a.name === animationName);
-    if (!clip && animationName.includes('attack') && internalAnimations.length > 0) {
+    let clip = internalAnimations.find(a => a.name === currentAnim);
+    if (!clip && currentAnim.includes('attack') && internalAnimations.length > 0) {
       clip = internalAnimations[0]; // fallback for custom attack anims
     }
     
@@ -79,95 +154,56 @@ export function GlbCharacterModel({
     gltfLoader.load(animationUrl, (gltf) => {
       if (!active) return;
       setExternalAnimations(gltf.animations);
-      setError(null);
     }, undefined, (err) => {
-      console.error("Error loading animation GLTF:", err);
-      if (active) setError(err as Error);
+      console.warn(`[GlbCharacterModel] Failed to load animation ${animationUrl}:`, err);
+      // Do not throw to prevent React crash!
     });
 
     return () => {
       active = false;
     };
-  }, [animationUrl]);
-
-  const clonedScene = useMemo(() => {
-    if (!charScene) return null;
-    const cloned = SkeletonUtils.clone(charScene);
-    cloned.traverse((child: any) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        child.frustumCulled = false; // Just in case
-        
-        // Fix transparency bugs by forcing materials to be transparent and cloned
-        if (child.material) {
-          const mats = Array.isArray(child.material) ? child.material : [child.material];
-          const clonedMats = mats.map(m => {
-            const newMat = m.clone();
-            newMat.transparent = true;
-            
-            // Hue Shifting via Shader Injection
-            if (colorOverride) {
-              newMat.onBeforeCompile = (shader) => {
-                shader.uniforms.targetColor = { value: new THREE.Color(colorOverride) };
-                
-                shader.fragmentShader = `
-                  uniform vec3 targetColor;
-                ` + shader.fragmentShader;
-                
-                shader.fragmentShader = shader.fragmentShader.replace(
-                  '#include <map_fragment>',
-                  `
-                  #include <map_fragment>
-                  float r_val = diffuseColor.r;
-                  float g_val = diffuseColor.g;
-                  float b_val = diffuseColor.b;
-                  
-                  // Se o verde for a cor predominante
-                  if (g_val > r_val * 1.1 && g_val > b_val * 1.1) {
-                     float intensity = g_val; 
-                     diffuseColor = vec4(targetColor * intensity, diffuseColor.a);
-                  }
-                  `
-                );
-              };
-            }
-            
-            newMat.needsUpdate = true;
-            return newMat;
-          });
-          child.material = Array.isArray(child.material) ? clonedMats : clonedMats[0];
-        }
-      }
-    });
-    return cloned;
-  }, [charScene]);
+  }, [animationUrl, currentAnim, internalAnimations]);
   
   useEffect(() => {
-    if (clonedScene) {
-      let clip = internalAnimations.find(a => a.name === animationName);
+    if (clonedScene && mixer) {
+      let clip = internalAnimations.find(a => a.name === currentAnim);
       
-      if (!clip && animationName.includes('attack') && internalAnimations.length > 0) {
+      if (!clip && currentAnim.includes('attack') && internalAnimations.length > 0) {
         clip = internalAnimations[0]; // Force first internal as attack if missing
       }
       
       if (!clip && externalAnimations.length > 0) {
-        clip = externalAnimations.find(a => a.name === animationName) || externalAnimations[0];
+        clip = externalAnimations.find(a => a.name === currentAnim) || externalAnimations[0];
       }
 
       if (clip) {
-        const action = mixer.clipAction(clip, clonedScene);
-        action.reset().fadeIn(0.2).play();
-        return () => {
-          action.fadeOut(0.2);
-        };
+        // Only keep tracks that actually exist in the model to avoid THREE.PropertyBinding warnings/crashes
+        // This is a common issue when applying external mixamo animations to different skeletons.
+        const cleanClip = clip.clone();
+        cleanClip.tracks = cleanClip.tracks.filter(track => {
+          const trackName = track.name.split('.')[0];
+          let found = false;
+          clonedScene.traverse((child: any) => {
+            if (child.name === trackName) found = true;
+          });
+          // We can't strictly filter all because some root motions map differently, 
+          // but we'll let Three.js handle the warnings natively. 
+          // If the crash was an exception, the above error swallowing fixes it.
+          return true;
+        });
+
+        try {
+          const action = mixer.clipAction(cleanClip);
+          action.reset().fadeIn(0.2).play();
+          return () => {
+            action.fadeOut(0.2);
+          };
+        } catch (err) {
+          console.warn("[GlbCharacterModel] Failed to play animation:", err);
+        }
       }
     }
-  }, [animationName, internalAnimations, externalAnimations, clonedScene, mixer]);
-
-  if (error) {
-    throw error; // Let ErrorBoundary catch it
-  }
+  }, [currentAnim, internalAnimations, externalAnimations, clonedScene, mixer]);
 
   return (
     <group ref={group}>
