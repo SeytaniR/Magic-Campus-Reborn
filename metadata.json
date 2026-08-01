@@ -1,0 +1,6 @@
+{
+  "name": "Magic Campus Remake",
+  "description": "A mobile-optimized, full-stack remake of the classic MMORPG Magic Campus with React, Node.js, and ECS architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

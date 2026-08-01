@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@keyframes portal-spin {
+  0% { transform: rotate(0deg) scale(1); color: #8b5cf6; filter: drop-shadow(0 0 8px #8b5cf6); }
+  33% { transform: rotate(120deg) scale(1.1); color: #ec4899; filter: drop-shadow(0 0 12px #ec4899); }
+  66% { transform: rotate(240deg) scale(0.9); color: #06b6d4; filter: drop-shadow(0 0 10px #06b6d4); }
+  100% { transform: rotate(360deg) scale(1); color: #8b5cf6; filter: drop-shadow(0 0 8px #8b5cf6); }
+}
+
+.portal-pentagram {
+  animation: portal-spin 4s linear infinite;
+  transform-origin: center center;
+  will-change: transform, color, filter;
+}
+
+.portal-container {
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
