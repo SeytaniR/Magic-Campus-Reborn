@@ -1,8 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Settings, X } from 'lucide-react';
+import { Play, Settings, X } from 'lucide-react';
+import { Canvas } from '@react-three/fiber';
+import * as THREE from 'three';
 import GameScene from './GameScene';
 import VirtualJoystick from './VirtualJoystick';
 import { useGameStore, PlayerState } from '../../game/store';
+import BattleScene from '../Battle/BattleScene';
+import BattleUI from '../Battle/BattleUI';
+import { battleManager } from '../../game/ecs/BattleManager';
 
 const CHARACTERS = [
   { id: 'M2lutador', name: 'Lutador Artista' },
@@ -71,6 +76,21 @@ export default function MapTester() {
     loadMap('izumo');
   }, []); // Run only once on mount
 
+  const battleStartedRef = useRef(false);
+
+  // Watch for battle trigger
+  useEffect(() => {
+    if (player.inBattle && !battleStartedRef.current) {
+      battleStartedRef.current = true;
+      battleManager.startBattle(devCharacterClass);
+      
+      battleManager.setOnBattleEnd((victory) => {
+        setPlayerInBattle(false);
+        battleStartedRef.current = false;
+      });
+    }
+  }, [player.inBattle, devCharacterClass, setPlayerInBattle]);
+
   // Keyboard support for desktop testing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -129,16 +149,28 @@ export default function MapTester() {
   if (error) return <div className="flex w-full h-full items-center justify-center bg-gray-950 text-red-500">Error: {error}</div>;
 
   return (
-    <div className="relative w-full h-full bg-gray-950 touch-none">
-      <GameScene imageUrl={`/mapas/${currentMapName}.jpg`} />
-      
-      {/* HUD Layer */}
-      <div className="absolute top-4 left-4 z-10 pointer-events-none">
-        <div className="bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-md border border-white/10">
-          <h1 className="font-bold text-lg">{mapData?.name || currentMapName}</h1>
-          <p className="text-xs text-gray-300">Player: X: {Math.round(player.x)} | Y: {Math.round(player.y)}</p>
-        </div>
+    <div className="relative w-full h-full bg-gray-950 touch-none overflow-hidden">
+      <div className="absolute inset-0 z-10 pointer-events-none">
+        <Canvas shadows={{ type: THREE.PCFShadowMap as any }}>
+          {player.inBattle ? (
+            <BattleScene mapImageUrl={`/mapas/${currentMapName}.jpg`} />
+          ) : (
+            <GameScene imageUrl={`/mapas/${currentMapName}.jpg`} />
+          )}
+        </Canvas>
       </div>
+
+      {player.inBattle && <BattleUI />}
+      
+      {/* HUD Layer (Only visible when not in battle) */}
+      {!player.inBattle && (
+        <div className="absolute top-4 left-4 z-10 pointer-events-none">
+          <div className="bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-md border border-white/10">
+            <h1 className="font-bold text-lg">{mapData?.name || currentMapName}</h1>
+            <p className="text-xs text-gray-300">Player: X: {Math.round(player.x)} | Y: {Math.round(player.y)}</p>
+          </div>
+        </div>
+      )}
 
       {/* Dev Menu Toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -212,19 +244,23 @@ export default function MapTester() {
       )}
 
       {/* Virtual Joystick for Mobile */}
-      <div className="absolute bottom-12 left-12 z-20 md:hidden">
-        <VirtualJoystick onMove={handleJoystickMove} onStop={handleJoystickStop} />
-      </div>
+      {!player.inBattle && (
+        <div className="absolute bottom-12 left-12 z-20 md:hidden">
+          <VirtualJoystick onMove={handleJoystickMove} onStop={handleJoystickStop} />
+        </div>
+      )}
 
       {/* Desktop instructions */}
-      <div className="absolute bottom-4 right-4 z-10 hidden md:block pointer-events-none">
-        <div className="bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-md border border-white/10 text-sm">
-          Use WASD or Arrow Keys to move
+      {!player.inBattle && (
+        <div className="absolute bottom-4 right-4 z-10 hidden md:block pointer-events-none">
+          <div className="bg-black/50 text-white px-4 py-2 rounded-lg backdrop-blur-md border border-white/10 text-sm">
+            Use WASD or Arrow Keys to move
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Portal Prompt */}
-      {activePortal && activePortal.portalType === 'teleport' && (
+      {!player.inBattle && activePortal && activePortal.portalType === 'teleport' && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
           <div className="bg-black/80 backdrop-blur-md p-6 rounded-xl border border-white/20 shadow-2xl flex flex-col items-center gap-4">
             <h2 className="text-white text-xl font-bold text-center">

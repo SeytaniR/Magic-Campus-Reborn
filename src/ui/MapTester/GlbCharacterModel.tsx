@@ -9,19 +9,22 @@ let gltfLoader: GLTFLoader | null = null;
 
 export function GlbCharacterModel({ 
   characterId, 
-  animationName 
+  animationName,
+  colorOverride
 }: { 
   characterId: string, 
-  animationName: string 
+  animationName: string,
+  colorOverride?: string
 }) {
   const group = useRef<THREE.Group>(null);
   const { gl } = useThree();
   
   const [charScene, setCharScene] = useState<THREE.Group | null>(null);
-  const [animations, setAnimations] = useState<THREE.AnimationClip[]>([]);
+  const [internalAnimations, setInternalAnimations] = useState<THREE.AnimationClip[]>([]);
+  const [externalAnimations, setExternalAnimations] = useState<THREE.AnimationClip[]>([]);
   const [error, setError] = useState<Error | null>(null);
 
-  const characterUrl = `/characters/${characterId}.glb`;
+  const characterUrl = characterId.includes('/') ? `/${characterId}.glb` : `/characters/${characterId}.glb`;
   const animationUrl = `/animations/${animationName}.glb`;
 
   // Create a dedicated mixer for this component instance
@@ -49,6 +52,7 @@ export function GlbCharacterModel({
     gltfLoader.load(characterUrl, (gltf) => {
       if (!active) return;
       setCharScene(gltf.scene);
+      setInternalAnimations(gltf.animations);
       setError(null);
     }, undefined, (err) => {
       console.error("Error loading character GLTF:", err);
@@ -61,13 +65,20 @@ export function GlbCharacterModel({
   }, [characterUrl, gl]);
 
   useEffect(() => {
-    let active = true;
+    // Check if animation is already internal
+    let clip = internalAnimations.find(a => a.name === animationName);
+    if (!clip && animationName.includes('attack') && internalAnimations.length > 0) {
+      clip = internalAnimations[0]; // fallback for custom attack anims
+    }
     
-    if (!gltfLoader) return; // Should be initialized by the other hook
+    if (clip) return; // No need to load external
+
+    let active = true;
+    if (!gltfLoader) return; 
 
     gltfLoader.load(animationUrl, (gltf) => {
       if (!active) return;
-      setAnimations(gltf.animations);
+      setExternalAnimations(gltf.animations);
       setError(null);
     }, undefined, (err) => {
       console.error("Error loading animation GLTF:", err);
@@ -94,6 +105,34 @@ export function GlbCharacterModel({
           const clonedMats = mats.map(m => {
             const newMat = m.clone();
             newMat.transparent = true;
+            
+            // Hue Shifting via Shader Injection
+            if (colorOverride) {
+              newMat.onBeforeCompile = (shader) => {
+                shader.uniforms.targetColor = { value: new THREE.Color(colorOverride) };
+                
+                shader.fragmentShader = `
+                  uniform vec3 targetColor;
+                ` + shader.fragmentShader;
+                
+                shader.fragmentShader = shader.fragmentShader.replace(
+                  '#include <map_fragment>',
+                  `
+                  #include <map_fragment>
+                  float r_val = diffuseColor.r;
+                  float g_val = diffuseColor.g;
+                  float b_val = diffuseColor.b;
+                  
+                  // Se o verde for a cor predominante
+                  if (g_val > r_val * 1.1 && g_val > b_val * 1.1) {
+                     float intensity = g_val; 
+                     diffuseColor = vec4(targetColor * intensity, diffuseColor.a);
+                  }
+                  `
+                );
+              };
+            }
+            
             newMat.needsUpdate = true;
             return newMat;
           });
@@ -105,18 +144,26 @@ export function GlbCharacterModel({
   }, [charScene]);
   
   useEffect(() => {
-    if (animations.length > 0 && clonedScene) {
-      const clip = animations[0];
-      const action = mixer.clipAction(clip, clonedScene);
+    if (clonedScene) {
+      let clip = internalAnimations.find(a => a.name === animationName);
       
-      // We must tell the mixer to stop any lingering weights on this action if we reuse it
-      action.reset().fadeIn(0.2).play();
+      if (!clip && animationName.includes('attack') && internalAnimations.length > 0) {
+        clip = internalAnimations[0]; // Force first internal as attack if missing
+      }
       
-      return () => {
-        action.fadeOut(0.2);
-      };
+      if (!clip && externalAnimations.length > 0) {
+        clip = externalAnimations.find(a => a.name === animationName) || externalAnimations[0];
+      }
+
+      if (clip) {
+        const action = mixer.clipAction(clip, clonedScene);
+        action.reset().fadeIn(0.2).play();
+        return () => {
+          action.fadeOut(0.2);
+        };
+      }
     }
-  }, [animations, clonedScene, mixer]);
+  }, [animationName, internalAnimations, externalAnimations, clonedScene, mixer]);
 
   if (error) {
     throw error; // Let ErrorBoundary catch it

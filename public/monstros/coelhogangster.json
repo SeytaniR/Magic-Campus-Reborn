@@ -1,0 +1,19 @@
+{
+  "id": "coelho",
+  "namePattern": "Coelho Gangster",
+  "tier": "C",
+  "biomes": [
+    "subúrbio"
+  ],
+  "combatStyle": "MELEE_PHYSICAL",
+  "baseStatsSpread": {
+    "vitality": 20,
+    "strength": 10,
+    "intelligence": 3,
+    "spirit": 10,
+    "agility": 25,
+    "mentality": 2
+  },
+  "assetPath": "/monstros/coelhogangster.glb",
+  "description": "Ele se acha o malandrão dos monstros, apesar disso ele realmente é muito ágil e bate forte."
+}

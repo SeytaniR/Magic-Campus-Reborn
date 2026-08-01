@@ -12,6 +12,8 @@ interface GameState {
     direction: number; // Angle in radians
     state: PlayerState;
     inBattle: boolean;
+    distanceTraveled: number;
+    nextEncounterDistance: number;
   };
   mapData: MapConfig | null;
   mapImageSize: { width: number, height: number };
@@ -36,6 +38,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     direction: 0,
     state: 'idle',
     inBattle: false,
+    distanceTraveled: 0,
+    nextEncounterDistance: 1000 + Math.random() * 2000, // Random distance between 1000 and 3000 pixels
   },
   mapData: null,
   mapImageSize: { width: 0, height: 0 },
@@ -77,7 +81,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(s => ({ 
       mapData: data, 
       mapImageSize: { width, height },
-      player: { ...s.player, x: spawnX, y: spawnY, isMoving: false, direction: 0 },
+      player: { 
+        ...s.player, 
+        x: spawnX, 
+        y: spawnY, 
+        isMoving: false, 
+        direction: 0,
+        distanceTraveled: 0,
+        nextEncounterDistance: 1000 + Math.random() * 2000
+      },
       activePortal: null,
       spawnedPortalId: targetPortalId !== undefined ? targetPortalId : null
     }));
@@ -92,6 +104,9 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!isMoving && !player.isMoving && player.state !== 'moving') {
       return;
     }
+    
+    // Disable movement if in battle
+    if (player.inBattle) return;
 
     const speed = 8;
     const newX = player.x + dx * speed;
@@ -119,31 +134,60 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newState = isMoving ? 'moving' : (player.state === 'moving' ? 'idle' : player.state);
 
     // Check collision
+    let finalX = player.x;
+    let finalY = player.y;
+    let actualIsMoving = false;
+    let finalDirection = player.direction;
+    
     if (!checkCollision(newX, newY, mapData.polygons)) {
-      set({ 
-        player: { 
-          ...player, 
-          x: newX, 
-          y: newY, 
-          isMoving,
-          direction: isMoving ? Math.atan2(dy, dx) : player.direction,
-          state: newState
-        } 
-      });
+      finalX = newX;
+      finalY = newY;
+      actualIsMoving = isMoving;
+      finalDirection = isMoving ? Math.atan2(dy, dx) : player.direction;
     } else {
       // Try sliding along walls
       if (!checkCollision(newX, player.y, mapData.polygons)) {
-        set({ 
-          player: { ...player, x: newX, isMoving: true, direction: dx > 0 ? 0 : Math.PI, state: 'moving' } 
-        });
+        finalX = newX;
+        actualIsMoving = true;
+        finalDirection = dx > 0 ? 0 : Math.PI;
       } else if (!checkCollision(player.x, newY, mapData.polygons)) {
-        set({ 
-          player: { ...player, y: newY, isMoving: true, direction: dy > 0 ? Math.PI/2 : -Math.PI/2, state: 'moving' } 
-        });
-      } else {
-        set({ player: { ...player, isMoving: false, state: player.state === 'moving' ? 'idle' : player.state } });
+        finalY = newY;
+        actualIsMoving = true;
+        finalDirection = dy > 0 ? Math.PI/2 : -Math.PI/2;
       }
     }
+    
+    const finalState = actualIsMoving ? 'moving' : (player.state === 'moving' ? 'idle' : player.state);
+    
+    // Calculate distance for encounters
+    let newDistanceTraveled = player.distanceTraveled;
+    let newInBattle = player.inBattle;
+    let newNextEncounter = player.nextEncounterDistance;
+    
+    if (actualIsMoving && mapData.category !== 'city') {
+       const dist = Math.sqrt(Math.pow(finalX - player.x, 2) + Math.pow(finalY - player.y, 2));
+       newDistanceTraveled += dist;
+       
+       if (newDistanceTraveled >= newNextEncounter) {
+          newInBattle = true;
+          newDistanceTraveled = 0;
+          newNextEncounter = 1000 + Math.random() * 2000;
+       }
+    }
+
+    set({ 
+      player: { 
+        ...player, 
+        x: finalX, 
+        y: finalY, 
+        isMoving: actualIsMoving,
+        direction: finalDirection,
+        state: newInBattle ? 'idle' : finalState, // Stop moving anim if battle triggers
+        inBattle: newInBattle,
+        distanceTraveled: newDistanceTraveled,
+        nextEncounterDistance: newNextEncounter
+      } 
+    });
   },
   setPlayerPosition: (x, y) => set(state => ({ player: { ...state.player, x, y } })),
 }));

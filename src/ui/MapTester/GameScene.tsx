@@ -32,7 +32,7 @@ function CameraFollower() {
 
 export default function GameScene({ imageUrl }: { imageUrl: string }) {
   return (
-    <Canvas shadows={{ type: THREE.PCFShadowMap }}>
+    <>
       {/* 
         Orthographic Camera to show the 2D map without perspective distortion,
         but allowing 3D models to render on top. 
@@ -60,6 +60,6 @@ export default function GameScene({ imageUrl }: { imageUrl: string }) {
       <MapEffects />
       <GenericCharacter />
       <CameraFollower />
-    </Canvas>
+    </>
   );
 }

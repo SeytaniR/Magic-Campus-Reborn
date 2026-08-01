@@ -12,6 +12,7 @@ The project is a full-stack JavaScript/TypeScript application. It utilizes a **N
 ├── AGENTS.md            # AI developer rules and project guidelines.
 ├── arquitetura.md       # This file. Architectural overview.
 ├── changelogs.md        # Version history and project adjustments.
+├── combat_system_design.md # Deep-dive into combat mechanics, formulas, elements, and grids.
 ├── package.json         # Project dependencies, build, and dev scripts.
 ├── vite.config.ts       # Vite bundler configuration.
 ├── src/                 # Client-side source code (React & WebGL).

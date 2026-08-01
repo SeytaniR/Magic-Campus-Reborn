@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - Combat System Core, Isometric Battle UI, and GLTF Monsters
+### Added
+- Created `combat_system_design.md` to document the game's ATB, grid mechanics, elemental weaknesses, and formulas.
+- Implemented core Combat ECS: `BattleManager`, `ATBSystem`, `ActionQueueSystem`, and `CombatSystem`.
+- Added random distance-based encounters mapping to the battle scene.
+- Added new GLTF loading logic with dynamic hue-shifting ShaderMaterial (`GlbCharacterModel`) to support recoloring monsters (e.g. Green = Earth, Red = Fire).
+- Added `cogumelo.json` and mushroom models representing the first tier C monsters.
+- Completely redesigned `BattleScene` and `BattleUI` to match classic *Magic Campus* Isometric 2.5D perspective:
+  - Fixed camera pitch to 30 degrees (Isometric) with custom rotation alignment.
+  - Enemy team rendered on the Top-Left diagonal, Player team on Bottom-Right diagonal.
+  - Action Menu repositioned to vertical, right-aligned style.
+  - Floating 3D HP/ATB/Name HUD over characters utilizing `@react-three/drei`'s `<Html>`.
+### Fixed
+- Fixed fatal battle crashes caused by unmapped `idle` animations triggering HTML fallback loads.
+- Fixed UI disappearing bugs related to uninitialized `NaN` ATB max values.
+- Centralized `<Canvas>` into `MapTester.tsx` to prevent `WebGLRenderer: Context Lost` errors when switching between Map and Battle scenes.
+
 ## [0.3.13] - Particle Effect Optimization
 ### Changed
 - Reduced the particle count for the water/shimmer map effects by 50% to improve performance and visuals.

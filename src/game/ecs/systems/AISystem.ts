@@ -6,7 +6,7 @@ export class AISystem {
    * Generates a combat action for an AI-controlled entity (Monster or Auto-Pet).
    * Currently uses a very basic logic: Basic attack on a random living enemy.
    */
-  public generateAction(actor: Entity, allEntities: Entity[]): CombatAction | null {
+  public decideAction(actor: Entity, allEntities: Entity[]): CombatAction | null {
     if (!actor.gridPosition || !actor.stats || actor.stats.combat.currentHp <= 0) {
       return null;
     }
