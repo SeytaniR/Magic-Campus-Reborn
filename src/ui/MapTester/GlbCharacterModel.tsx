@@ -17,7 +17,8 @@ export function GlbCharacterModel({
   characterId: string, 
   animationName?: string,
   entityId?: string,
-  colorOverride?: string
+  colorOverride?: string,
+  attackAnimationOverride?: string
 }) {
   const group = useRef<THREE.Group>(null);
   const { gl } = useThree();
@@ -142,6 +143,9 @@ export function GlbCharacterModel({
   useEffect(() => {
     // Check if animation is already internal
     let clip = internalAnimations.find(a => a.name === currentAnim);
+    if (!clip && currentAnim.includes('attack') && attackAnimationOverride) {
+      clip = internalAnimations.find(a => a.name === attackAnimationOverride);
+    }
     if (!clip && currentAnim.includes('attack') && internalAnimations.length > 0) {
       clip = internalAnimations[0]; // fallback for custom attack anims
     }
@@ -168,6 +172,9 @@ export function GlbCharacterModel({
     if (clonedScene && mixer) {
       let clip = internalAnimations.find(a => a.name === currentAnim);
       
+      if (!clip && currentAnim.includes('attack') && attackAnimationOverride) {
+        clip = internalAnimations.find(a => a.name === attackAnimationOverride);
+      }
       if (!clip && currentAnim.includes('attack') && internalAnimations.length > 0) {
         clip = internalAnimations[0]; // Force first internal as attack if missing
       }

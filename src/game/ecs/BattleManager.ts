@@ -8,7 +8,7 @@ import { Team, GridLine, GridPositionComponent } from './components/GridPosition
 import { StatsComponent, Element } from './components/Stats';
 import { ATBComponent } from './components/ATB';
 import { StatusEffectsComponent } from './components/StatusEffects';
-
+import { monsterRegistry } from '../assets/MonsterRegistry';
 export class BattleManager {
   public entities: Entity[] = [];
   public active: boolean = false;
@@ -70,30 +70,53 @@ export class BattleManager {
     (player as any).assetPath = `/characters/${playerClass}.glb`;
     this.entities.push(player);
 
-    // Create 3 Enemy Mushrooms with random elements
+    // Create 3 Enemy Monsters dynamically
     const elements = [Element.EARTH, Element.FIRE, Element.WATER, Element.WIND];
     const colors = ["Verde", "Fogo", "Água", "Vento"];
     const colorHex = ["#4caf50", "#ff4444", "#4444ff", "#aaaaaa"];
     
     for (let i = 0; i < 3; i++) {
       const eIdx = Math.floor(Math.random() * elements.length);
-      const enemy = new Entity(`enemy${i}`, `Cogumelo de ${colors[eIdx]}`);
+      
+      const monsterDef = monsterRegistry.getRandomMonster() || {
+        id: "fallback",
+        namePattern: "Cogumelo {elemento}",
+        tier: "C",
+        biomes: [],
+        combatStyle: "MELEE_PHYSICAL",
+        description: "",
+        baseStatsSpread: { vitality: 30, strength: 15, intelligence: 5, spirit: 5, agility: 10, mentality: 5 },
+        assetPath: "/monstros/cogumelo.glb",
+        attackAnimation: "Shield_Dash_RM"
+      };
+
+      const finalName = monsterDef.namePattern.replace("{elemento}", colors[eIdx]);
+      const enemy = new Entity(`enemy${i}`, finalName);
+      
+      // Simple scaling from base stats for mockup purposes
+      const base = monsterDef.baseStatsSpread;
       enemy.stats = new StatsComponent(
-        { vitality: 30, strength: 15, intelligence: 5, spirit: 5, agility: 10, mentality: 5 },
+        base,
         { 
-          maxHp: 200, currentHp: 200, physicalDamage: 60, magicalDamage: 0, 
-          physicalDefense: 30, magicalDefense: 20, speed: 80 + Math.random() * 20, 
-          accuracy: 90, evasion: 0, energy: 0, criticalChance: 0.05, 
-          counterAttackChance: 0, doubleStrikeChance: 0, healEffectiveness: 1.0, 
+          maxHp: base.vitality * 15, currentHp: base.vitality * 15, 
+          physicalDamage: base.strength * 3, magicalDamage: base.intelligence * 3, 
+          physicalDefense: base.vitality * 1 + base.strength * 1, 
+          magicalDefense: base.spirit * 2, 
+          speed: base.agility * 2 + Math.random() * 20, 
+          accuracy: 90 + base.mentality * 2, evasion: base.agility * 2, energy: base.intelligence * 2 + base.spirit * 2, 
+          criticalChance: 0.05 + base.mentality * 0.002, 
+          counterAttackChance: base.strength * 0.001, doubleStrikeChance: base.mentality * 0.002, healEffectiveness: 1.0 + base.spirit * 0.01, 
           element: elements[eIdx] 
         }
       );
+      
       // Put some in front, some in back
       enemy.gridPosition = new GridPositionComponent(Team.B, i % 2 === 0 ? GridLine.FRONT : GridLine.BACK, i);
       enemy.atb = new ATBComponent(Math.random() * 200); // Random initial ATB advantage
       enemy.statusEffects = new StatusEffectsComponent();
-      (enemy as any).assetPath = "monstros/cogumelo";
+      (enemy as any).assetPath = monsterDef.assetPath;
       (enemy as any).colorOverride = colorHex[eIdx];
+      (enemy as any).attackAnimation = monsterDef.attackAnimation;
       this.entities.push(enemy);
     }
 

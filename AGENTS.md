@@ -12,6 +12,10 @@ These rules MUST be strictly followed by any AI Developer working on this projec
 - **GPU Acceleration**: All in-game graphics must be directed to the device's GPU (using WebGL, Three.js, Canvas, etc.).
 - **Assets Integration**: The system must support loading PNG maps alongside JSON files for collision points, transparency, and map effects. It must also support 3D `.glb` models with animations for characters, monsters, pets, and NPCs.
 
+## Monster Integration (Intelligent System)
+- **Plug & Play**: New monsters are added by dropping their `.glb` model and `.json` configuration file into the `public/monstros` folder. The `MonsterRegistry` will automatically load them.
+- **Animation Mapping**: The `.json` configuration file MUST contain an `"attackAnimation"` property specifying the exact name of the attack clip inside the `.glb` model, preventing hardcoded animation fallbacks.
+
 ## UI / UX & Responsiveness
 - **Mobile-First & Fluid Layouts**: All layouts, HUDs, interfaces, buttons, and visual resources MUST follow absolute rules of fluidity and responsiveness.
 - **Scaling**: Everything must stretch and shrink proportionally based on the device's screen resolution.

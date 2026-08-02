@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - Intelligent Monster System (Plug & Play)
+### Added
+- Created `MonsterRegistry` in `src/game/assets/MonsterRegistry.ts` that dynamically loads all `.json` monster definitions from the `public/monstros` folder using Vite's `import.meta.glob`.
+- Updated `BattleManager.ts` to randomly select enemies from the dynamically loaded pool, calculate battle stats using `baseStatsSpread`, and instantiate entities without hardcoding.
+- Re-configured `cogumelo.json`, `slime.json`, and `coelhogangster.json` to include an `"attackAnimation"` property mapping to their exact `.glb` animation names.
+- Upgraded `GlbCharacterModel.tsx` to accept an `attackAnimationOverride` property, enabling it to look up and play the exact attack animation from the JSON file.
+
 ## [0.4.1] - Performance, HUD Projection, and Crash Fixes
 ### Added
 - Replaced computationally expensive 3D `<Html>` overlays in `BattleScene` with a 2D static projection system (`HUDProjector`) in `BattleUI`, significantly improving FPS on mobile devices (e.g., Redmi Note 14 Pro).

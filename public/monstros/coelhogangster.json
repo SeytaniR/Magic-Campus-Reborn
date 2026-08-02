@@ -15,5 +15,6 @@
     "mentality": 2
   },
   "assetPath": "/monstros/coelhogangster.glb",
+  "attackAnimation": "Fighting Right Jab",
   "description": "Ele se acha o malandrão dos monstros, apesar disso ele realmente é muito ágil e bate forte."
 }

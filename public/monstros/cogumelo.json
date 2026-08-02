@@ -18,5 +18,6 @@
     "mentality": 5
   },
   "assetPath": "/monstros/cogumelo.glb",
+  "attackAnimation": "Shield_Dash_RM",
   "description": "Um monstro orgânico de origem fúngica. Suas raízes são densas, garantindo boa vitalidade e golpes físicos razoáveis, mas é extremamente lento e carece de inteligência."
 }

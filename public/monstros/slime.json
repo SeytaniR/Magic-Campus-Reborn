@@ -15,5 +15,6 @@
     "mentality": 0
   },
   "assetPath": "/monstros/slime.glb",
+  "attackAnimation": "Sword_Attack",
   "description": "Um monstro orgânico de origem mágica. Seu corpo é molenga e cheira mau, mas é muito resistente."
 }

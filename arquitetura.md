@@ -25,7 +25,7 @@ The project is a full-stack JavaScript/TypeScript application. It utilizes a **N
 │   │   │   ├── components/# Data components (Stats, ATB, GridPosition, StatusEffects).
 │   │   │   └── systems/   # Logic systems (ATBSystem, CombatSystem, SkillSystem, AISystem, ActionQueueSystem).
 │   │   ├── rendering/   # GPU-accelerated rendering pipelines (WebGL/Three.js).
-│   │   ├── assets/      # Loaders for PNG maps, JSON data, and GLB models.
+│   │   ├── assets/      # Asset managers (MonsterRegistry) and Loaders for PNG maps, JSON data, GLB models.
 │   │   ├── physics.ts   # Client-side 2D polygon collision & overlay detection.
 │   │   └── store.ts     # Zustand store for client game state, physics sync, and Animation State Machine (PlayerState).
 │   ├── ui/              # Responsive React components (HUD, Menus, Windows).

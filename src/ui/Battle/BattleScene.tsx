@@ -90,6 +90,7 @@ export default function BattleScene({ mapImageUrl }: { mapImageUrl: string }) {
         
         const assetPath = (entity as any).assetPath;
         const colorOverride = (entity as any).colorOverride;
+        const attackAnimation = (entity as any).attackAnimation;
 
         return (
           <group key={entity.id} position={[x, y, z]}>
@@ -98,6 +99,7 @@ export default function BattleScene({ mapImageUrl }: { mapImageUrl: string }) {
                 characterId={assetPath.replace('.glb', '').replace('/characters/', '')}
                 entityId={entity.id}
                 colorOverride={colorOverride}
+                attackAnimationOverride={attackAnimation}
               />
             </group>
             
